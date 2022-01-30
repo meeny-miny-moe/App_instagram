@@ -1,21 +1,33 @@
 package madwhale.g82.instagram;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -47,5 +59,50 @@ public class MainActivity extends AppCompatActivity {
         PostAdapter adpater = new PostAdapter(this, listItem);
         rvList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         rvList.setAdapter(adpater);
+
+
+
+        findViewById(R.id.fab_post).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                int permissionCheck= ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE);
+                if(permissionCheck== PackageManager.PERMISSION_GRANTED){
+                    Intent cameraIntent = new Intent (MediaStore.ACTION_IMAGE_CAPTURE);
+                    if(cameraIntent.resolveActivity(MainActivity.this.getPackageManager())!=null){
+                        startActivityForResult(cameraIntent,1000);
+                    }
+                }
+                else {
+                    ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},2000);
+                    //Toast.makeText(MainActivity.this,"권한이 없다",Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == 2000 && grantResults.length > 0) {
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            if (cameraIntent.resolveActivity(MainActivity.this.getPackageManager()) != null) {
+                startActivityForResult(cameraIntent, 1000);
+            }
+        }
+    }
+
+    /* Main(TimeLineFrag) -> run Camera -> main -> Post */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode==1000&& resultCode==RESULT_OK){
+            Log.d("onActivityResult","Camera Success");
+            Intent startIntent = new Intent(MainActivity.this,PostActivity.class);
+            startIntent.setData(data.getData());
+            startActivity(startIntent);
+        }
     }
 }
